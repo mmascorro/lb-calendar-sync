@@ -1,0 +1,9 @@
+---
+client_id: 
+client_secret: 
+cal_id: user@gmail.com
+access_token: 
+refresh_token: 
+work_cal_api: http://example.com/api
+work_email: user@example.com
+cal_query: string_to_query
