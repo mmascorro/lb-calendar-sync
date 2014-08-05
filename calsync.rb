@@ -29,11 +29,11 @@ class LbCal
 
     def saveTokens(a,r)
 
-        config = YAML.load_file('config.yml')
+        config = YAML.load_file('config.yaml')
         config['access_token'] = a
         config['refresh_token'] = r
 
-        File.open('config.yml', 'w') do |f|
+        File.open('config.yaml', 'w') do |f|
             YAML.dump(config, f)
         end
 
