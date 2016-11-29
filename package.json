@@ -1,0 +1,21 @@
+{
+  "name": "lb-cal-sync",
+  "version": "1.0.0",
+  "description": "Work calendar sync tool",
+  "main": "calsync.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/mmascorro/lb-calendar-sync.git"
+  },
+  "author": "Miguel Mascorro",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.1.4",
+    "google-auth-library": "^0.9.10",
+    "googleapis": "^14.2.0",
+    "js-yaml": "^3.7.0"
+  }
+}
