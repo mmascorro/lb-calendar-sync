@@ -1,9 +1,8 @@
 const http = require('https');
 const fs = require('fs');
 const readline = require('readline');
-const google = require('googleapis');
+const {google} = require('googleapis');
 const googleAuth = require('google-auth-library');
-const async = require('async');
 const yaml = require('js-yaml');
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
@@ -73,7 +72,7 @@ function storeToken(token) {
   console.log('Token stored to ' + TOKEN_PATH);
 }
 
-function getOldGCalEvents () {
+async function getOldGCalEvents () {
   let options = {
     calendarId: 'primary',
     timeMin: (new Date()).toISOString(),
@@ -82,38 +81,31 @@ function getOldGCalEvents () {
     q: calQuery
   };
   console.log('> Getting Old Events');
-  calendar.events.list(options, (err, response) => {
-    let events = response.items;
-    if (events.length != 0) {
-      console.log('> Deleting Old Events');
-      var tasks = [];
-      for (let i = 0; i < events.length; i++) {
-        let event = events[i];
-        tasks.push(function(callback){
-          deleteGCalEvent(event.id,callback);
-        });
-      }
-      async.parallel(tasks, (err,results) => {
-        getWorkEvents();
-      });
-    } else {
-      getWorkEvents();
+  let response = await calendar.events.list(options);
+  let events = response.data.items;
+  
+  if (events.length != 0) {
+    console.log('> Deleting Old Events');
+    let tasks = [];
+    for (let i = 0; i < events.length; i++) {
+      let event = events[i];
+      await deleteGCalEvent(event.id);    
     }
-  });
+    getWorkEvents();
+  } else {
+    getWorkEvents();
+  }
 }
 
-function deleteGCalEvent (eventId,callback) {
+async function deleteGCalEvent (eventId,callback) {
   let options = {
     calendarId: 'primary',
     eventId: eventId
   };
-
-  calendar.events.delete(options, (err, response) => {
-    callback(null,eventId)
-  });
+  return await calendar.events.delete(options);
 }
 
-function getWorkEvents () {
+async function getWorkEvents () {
   let email = workEmail;
   var options = {
     host: workCalHost,
@@ -132,9 +124,9 @@ function getWorkEvents () {
   });
 }
 
-function createGCalEvents (data) {
+async function createGCalEvents (data) {
   console.log('> Creating Events')
-  var tasks = [];
+  let tasks = [];
   for (let i = 0; i < data.length; i++) {
     let startDate = new Date(data[i].start);
     let endDate = new Date(data[i].end);
@@ -151,25 +143,12 @@ function createGCalEvents (data) {
         'useDefault': false
       }
     }
-
-    tasks.push(
-      function(callback){
-        calendar.events.insert({
-          calendarId: 'primary',
-          resource: eventData
-        }, function(err, event) {
-          if (err) {
-            console.log(err);
-            return;
-          }
-          callback(err,event.id)
-        });
-      }
-
-    );
-
+    
+    await calendar.events.insert({
+      calendarId: 'primary',
+      resource: eventData
+    });
   }
-  async.series(tasks,(err,results) => {});
 }
 
 function eventFormat(sch) {
@@ -188,7 +167,7 @@ fs.readFile('client_secret.json', (err, content) => {
     return;
   }
 
-  var config = yaml.safeLoad(fs.readFileSync('config.yaml', 'utf8'));
+  let config = yaml.safeLoad(fs.readFileSync('config.yaml', 'utf8'));
   workCalHost = config.workCalHost;
   workCalApi = config.workCalApi;
   workEmail = config.workEmail;
