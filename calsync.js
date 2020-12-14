@@ -154,10 +154,13 @@ async function createGCalEvents (data) {
 function eventFormat(sch) {
   let count = sch['cnt'];
   let courseTitle = sch['gcal_title'].split(' - ');
-  let newTitle = `[${count}]${courseTitle[0]}`;
-  if (sch['loc'] != 'Austin, TX') {
-    newTitle = `${newTitle}/${sch['loc']}`;
+  let newTitle = '';
+  if (sch['custom_name'] != '') {
+    newTitle = `[${count}] ${sch['custom_name']}`;
+  } else {
+    newTitle = `[${count}] ${courseTitle[0]}`;
   }
+  newTitle = `${newTitle} : ${sch['loc']}`;
   return newTitle;
 }
 
