@@ -75,7 +75,7 @@ function storeToken(token) {
 async function getOldGCalEvents () {
   let options = {
     calendarId: 'primary',
-    timeMin: (new Date()).toISOString(),
+    // timeMin: (new Date()).toISOString(),
     singleEvents: true,
     orderBy: 'startTime',
     q: calQuery
@@ -91,10 +91,9 @@ async function getOldGCalEvents () {
       let event = events[i];
       await deleteGCalEvent(event.id);    
     }
-    getWorkEvents();
-  } else {
-    getWorkEvents();
-  }
+  } 
+  getWorkEvents();
+
 }
 
 async function deleteGCalEvent (eventId,callback) {
@@ -126,27 +125,62 @@ async function getWorkEvents () {
 
 async function createGCalEvents (data) {
   console.log('> Creating Events')
-  let tasks = [];
+  let events = [];
+
   for (let i = 0; i < data.length; i++) {
-    let startDate = new Date(data[i].start);
-    let endDate = new Date(data[i].end);
-    endDate.setDate(endDate.getDate()+1);
-    let start = startDate.toISOString().split('T')[0]
-    let end = endDate.toISOString().split('T')[0]
+
+    let startDate;
+    let endDate;
+    let start;
+    let end;
 
     let eventData = {
       summary: eventFormat(data[i]),
       description: calQuery,
-      start: {date: start},
-      end: {date: end},
       reminders: {
         'useDefault': false
       }
     }
-    
+
+    if (data[i].custom_dates) {
+
+      data[i].custom_dates.forEach(date => {
+        let event = {...eventData}
+        event['start'] = {
+          dateTime: new Date(date.start),
+          timeZone: data[i].timezone
+        }
+        event['end'] = {
+          dateTime: new  Date(date.end),
+          timeZone: data[i].timezone
+        }
+
+        events.push(event)
+
+      });
+
+
+
+    } else {
+      startDate = new Date(data[i].start);
+      endDate = new Date(data[i].end);
+      endDate.setDate(endDate.getDate()+1);
+      start = startDate.toISOString().split('T')[0]
+      end = endDate.toISOString().split('T')[0]
+
+      let event = {...eventData}
+      event['start'] = {date: start}
+      event['end'] = {date: end}
+
+      events.push(event)
+    }
+
+  }
+  for (e of events) {
+    // console.log(e)
     await calendar.events.insert({
       calendarId: 'primary',
-      resource: eventData
+      resource: e
     });
   }
 }
@@ -170,7 +204,7 @@ fs.readFile('client_secret.json', (err, content) => {
     return;
   }
 
-  let config = yaml.safeLoad(fs.readFileSync('config.yaml', 'utf8'));
+  let config = yaml.load(fs.readFileSync('config.yaml', 'utf8'));
   workCalHost = config.workCalHost;
   workCalApi = config.workCalApi;
   workEmail = config.workEmail;
